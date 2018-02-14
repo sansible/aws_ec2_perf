@@ -6,13 +6,12 @@ testinfra_hosts = testinfra.utils.ansible_runner.AnsibleRunner(
     os.environ['MOLECULE_INVENTORY_FILE']).get_hosts('all')
 
 
-def test_hosts_file(host):
-    # Assert /etc/hosts exists,...
-    f = host.file('/etc/hosts')
-    assert f.exists
-    # ...is owned by the user root,...
-    assert f.user == 'root'
-    # ...and owned by the group root.
-    assert f.group == 'root'
-
-# See http://testinfra.readthedocs.io/ for guidance on writing testinfra tests.
+def test_sysctl(host):
+    '''
+    Only some settings actually take effect in Docker, just check for the ones
+    that actually work
+    '''
+    assert host.sysctl("vm.swappiness") == 0
+    assert host.sysctl("vm.dirty_ratio") == 80
+    assert host.sysctl("vm.dirty_background_ratio") == 5
+    assert host.sysctl("vm.dirty_expire_centisecs") == 12000

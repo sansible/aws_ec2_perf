@@ -9,19 +9,18 @@ driver:
 # See https://molecule.readthedocs.io/en/latest/configuration.html#platforms for details.
 # NOTE: Different drivers (see above) may have different configuration options.
 platforms:
-  - name: ROLE_NAME-trusty
+  - name: aws_ec2_perf-trusty
     image: ubuntu:trusty
-  - name: ROLE_NAME-xenial
+    privileged: yes
+  - name: aws_ec2_perf-xenial
     image: ubuntu:xenial
+    privileged: yes
 
 # Ansible is the only supported provisioner.  Configure Ansible options here, change the linter for Ansible playbooks,
 # or modify the playbooks run for the various molecule tasks.
 # See https://molecule.readthedocs.io/en/latest/configuration.html#provisioner for details.
 provisioner:
   name: ansible
-  config_options:
-    defaults:
-      hash_behaviour: merge
   lint:
     name: ansible-lint
 

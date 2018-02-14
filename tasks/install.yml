@@ -1,0 +1,90 @@
+---
+
+- name: Install sysfsutils if required
+  become: yes
+  apt:
+    name: sysfsutils
+  when: sansible_aws_ec2_perf_huge_pages_enabled
+    or sansible_aws_ec2_perf_clocksource_enabled
+
+- name: Setup sysctl Virtual Memory performance settings
+  become: yes
+  sysctl:
+    name: "vm.swappiness"
+    value: 0
+    state: present
+  when: sansible_aws_ec2_perf_virtual_mem_enabled
+
+- name: Ensures transparent huge pages is disabled
+  become: yes
+  copy:
+    content: "kernel/mm/transparent_hugepage/enabled = never\n"
+    dest: /etc/sysfs.d/thp.conf
+    mode: 0644
+  when: sansible_aws_ec2_perf_huge_pages_enabled
+  notify:
+    - restart sysfsutils
+
+- name: Setup sysctl NUMA performance settings
+  become: yes
+  sysctl:
+    name: "kernel.numa_balancing"
+    value: 0
+    state: present
+  when: sansible_aws_ec2_perf_numa_enabled
+
+- name: Setup sysctl Filesystem performance settings
+  become: yes
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+  when: sansible_aws_ec2_perf_filesystem_enabled
+  with_items:
+    - name: "vm.dirty_ratio"
+      value: 80
+    - name: "vm.dirty_background_ratio"
+      value: 5
+    - name: "vm.dirty_expire_centisecs"
+      value: 12000
+
+- name: Setup sysctl Network performance settings
+  become: yes
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+  when: sansible_aws_ec2_perf_network_enabled
+  with_items:
+    - name: "net.core.somaxconn"
+      value: 1000
+    - name: "net.core.netdev_max_backlog"
+      value: 5000
+    - name: "net.core.rmem_max"
+      value: 16777216
+    - name: "net.core.wmem_max"
+      value: 16777216
+    - name: "net.ipv4.tcp_wmem"
+      value: "4096 12582912 16777216"
+    - name: "net.ipv4.tcp_rmem"
+      value: "4096 12582912 16777216"
+    - name: "net.ipv4.tcp_max_syn_backlog"
+      value: 8096
+    - name: "net.ipv4.tcp_slow_start_after_idle"
+      value: 0
+    - name: "net.ipv4.tcp_tw_reuse"
+      value: 1
+    - name: "net.ipv4.ip_local_port_range"
+      value: "10240 65535"
+    - name: "net.ipv4.tcp_abort_on_overflow"
+      value: 1
+
+- name: Switch clocksource to tsc to fix Trusty Xen Hypervisor issue
+  become: yes
+  copy:
+    content: "devices/system/clocksource/clocksource0/current_clocksource = tsc\n"
+    dest: /etc/sysfs.d/clocksource.conf
+    mode: 0644
+  when: sansible_aws_ec2_perf_clocksource_enabled
+  notify:
+    - restart sysfsutils

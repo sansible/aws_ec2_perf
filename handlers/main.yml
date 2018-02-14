@@ -1,1 +1,7 @@
 ---
+
+- name: restart sysfsutils
+  become: yes
+  service:
+    name: sysfsutils
+    state: restarted

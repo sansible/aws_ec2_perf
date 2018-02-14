@@ -1,1 +1,6 @@
 ---
+
+- name: Install AWS EC2 performance enhancements
+  include: install.yml
+  tags:
+    - build

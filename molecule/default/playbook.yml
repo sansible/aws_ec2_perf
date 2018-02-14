@@ -2,5 +2,17 @@
 
 - name: Converge
   hosts: all
+
+  tasks:
+    - name: Update apt
+      become: yes
+      apt:
+        cache_valid_time: 1800
+        update_cache: yes
+
   roles:
-    - role: ROLE_NAME
+    - role: aws_ec2_perf
+      sansible_aws_ec2_perf_clocksource_enabled: yes
+      sansible_aws_ec2_perf_filesystem_enabled: yes
+      sansible_aws_ec2_perf_huge_pages_enabled: yes
+      sansible_aws_ec2_perf_virtual_mem_enabled: yes
