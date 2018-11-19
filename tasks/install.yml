@@ -1,12 +1,5 @@
 ---
 
-- name: Install sysfsutils if required
-  become: yes
-  apt:
-    name: sysfsutils
-  when: sansible_aws_ec2_perf_huge_pages_enabled
-    or sansible_aws_ec2_perf_clocksource_enabled
-
 - name: Setup sysctl Virtual Memory performance settings
   become: yes
   sysctl:
@@ -79,12 +72,47 @@
     - name: "net.ipv4.tcp_abort_on_overflow"
       value: 1
 
-- name: Switch clocksource to tsc to fix Trusty Xen Hypervisor issue
+- name: Create Clocksource Setup service for SysV
   become: yes
   copy:
-    content: "devices/system/clocksource/clocksource0/current_clocksource = tsc\n"
-    dest: /etc/sysfs.d/clocksource.conf
-    mode: 0644
-  when: sansible_aws_ec2_perf_clocksource_enabled
+    dest: /etc/init.d/clocksource-setup
+    owner: root
+    mode: 0755
+    src: clocksource-setup.sysv
+  when:
+    - sansible_aws_ec2_perf_clocksource_enabled
+    - ansible_service_mgr != "systemd"
   notify:
-    - restart sysfsutils
+    - start clocksource-setup
+
+- name: Ensure Clocksource Setup service is enabled for SysV
+  become: yes
+  service:
+    enabled: yes
+    name: clocksource-setup
+  when:
+    - sansible_aws_ec2_perf_clocksource_enabled
+    - ansible_service_mgr != "systemd"
+
+- name: Create Clocksource Setup service for SystemD
+  become: yes
+  copy:
+    dest: /lib/systemd/system/clocksource-setup.service
+    owner: root
+    mode: 0644
+    src: clocksource-setup.systemd
+  when:
+    - sansible_aws_ec2_perf_clocksource_enabled
+    - ansible_service_mgr == "systemd"
+  notify:
+    - start clocksource-setup
+
+- name: Ensure Clocksource Setup service is enabled for SystemD
+  become: yes
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    name: clocksource-setup
+  when:
+    - sansible_aws_ec2_perf_clocksource_enabled
+    - ansible_service_mgr == "systemd"

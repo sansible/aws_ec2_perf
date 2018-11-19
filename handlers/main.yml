@@ -1,7 +1,7 @@
 ---
 
-- name: restart sysfsutils
+- name: start clocksource-setup
   become: yes
   service:
-    name: sysfsutils
-    state: restarted
+    name: clocksource-setup
+    state: started
